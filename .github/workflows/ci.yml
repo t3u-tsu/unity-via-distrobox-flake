@@ -1,0 +1,31 @@
+name: Nix Flake Check
+
+on:
+  push:
+    branches: [ "main", "feat/*", "fix/*", "refactor/*", "docs/*", "chore/*" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Magic Nix Cache
+        uses: cachix/cachix-action@v15
+        with:
+          skipPush: true
+
+      - name: Check Nix Flake
+        # Evaluates formatter + all checks (module evaluation in both
+        # configurations) and runs shellcheck via writeShellApplication.
+        run: nix flake check --show-trace --accept-flake-config
+
+      - name: Build unityhub launcher
+        run: nix build .#unityhub
