@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with lib;
 let
@@ -66,7 +71,10 @@ in
       home.packages = [
         (pkgs.writeShellApplication {
           name = "unityhub";
-          runtimeInputs = [ pkgs.distrobox pkgs.podman ];
+          runtimeInputs = [
+            pkgs.distrobox
+            pkgs.podman
+          ];
           text = launcher;
         })
       ];

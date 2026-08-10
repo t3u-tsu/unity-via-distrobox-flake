@@ -10,7 +10,12 @@
   };
 
   outputs =
-    { self, nixpkgs, home-manager, ... }:
+    {
+      self,
+      nixpkgs,
+      home-manager,
+      ...
+    }:
     let
       forAllSystems = nixpkgs.lib.genAttrs [
         "x86_64-linux"
@@ -36,7 +41,10 @@
           # home-manager module (same script, same pinned runtime).
           unityhub = pkgs.writeShellApplication {
             name = "unityhub";
-            runtimeInputs = [ pkgs.distrobox pkgs.podman ];
+            runtimeInputs = [
+              pkgs.distrobox
+              pkgs.podman
+            ];
             text = builtins.readFile ./files/launcher.sh;
           };
         }
@@ -69,14 +77,13 @@
       # ── Formatter & dev shell ───────────────────────────────────
       formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt);
 
-      devShells = forAllSystems (
-        system:
-        nixpkgs.legacyPackages.${system}.mkShell {
+      devShells = forAllSystems (system: {
+        default = nixpkgs.legacyPackages.${system}.mkShell {
           packages = with nixpkgs.legacyPackages.${system}; [
             nixfmt
             shellcheck
           ];
-        }
-      );
+        };
+      });
     };
 }
