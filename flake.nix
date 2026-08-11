@@ -38,7 +38,11 @@
               }" > "$out"
               grep -q '^unityhub$' "$out"
               test -f "${test.config.xdg.configFile."distrobox/distrobox.ini".source}"
-              test -f "${test.config.xdg.dataFile."applications/unityhub.desktop".source}"
+              desktop="${test.config.xdg.dataFile."applications/unityhub.desktop".source}"
+              test -f "$desktop"
+              grep -q '^Exec=.*systemd-run' "$desktop"
+              grep -q '^MimeType=.*x-scheme-handler/unityhub' "$desktop"
+              grep -q '^StartupNotify=true' "$desktop"
               test -n "${
                 builtins.toString test.config.systemd.user.services."unity-via-distrobox".Service.ExecStart
               }"

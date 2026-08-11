@@ -53,7 +53,13 @@ After `nixos-rebuild switch`, launching `unityhub` (or the desktop entry) provis
 - Logs: `journalctl --user -u unity-via-distrobox`
 - Stop the container: `distrobox stop unity-via-distrobox`
 - Rebuild the container: `distrobox rm -f unity-via-distrobox`, then launch `unityhub`
-- Provisioning failure logs are kept at `/tmp/unity-assemble-*.log` (removed on success)
+- Provisioning failure logs are kept at `~/.local/state/unity-via-distrobox/provision.log` (`$XDG_STATE_HOME` if set; removed on success)
+
+## Troubleshooting
+
+- `org.freedesktop.login1.Manager.Inhibit: AccessDenied` in the Unity Hub
+  journal: harmless. The container cannot inhibit the host's idle power
+  management; Unity Hub itself works normally.
 
 ## Development
 
