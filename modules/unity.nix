@@ -11,7 +11,6 @@ let
   # Must match the section name in files/distrobox.ini.
   containerName = "unity-via-distrobox";
   distroboxIni = builtins.readFile ../files/distrobox.ini;
-  unityProvide = ../files/unity-provide.ysh;
   unityhub = ../files/unityhub.ysh;
 
   mkYshWrapper =
@@ -28,7 +27,6 @@ let
       '';
     };
 
-  unityProvidePkg = mkYshWrapper "unity-provide" unityProvide;
   unityhubPkg = mkYshWrapper "unityhub" unityhub;
 in
 {
@@ -46,13 +44,13 @@ in
     xdg.configFile."distrobox/distrobox.ini".text = distroboxIni;
 
     # xdg.desktopEntries is broken in the current home-manager release.
-    # systemctl --user start escapes browser sandboxes for unityhub:// deep links.
+    # systemd-run escapes browser sandboxes; %U forwards unityhub:// deep links.
     xdg.dataFile."applications/unityhub.desktop".text = ''
       [Desktop Entry]
       Type=Application
       Name=Unity Hub
       GenericName=Unity Hub Launcher
-      Exec=systemctl --user start --no-block unity-via-distrobox.service
+      Exec=systemd-run --user --no-block --collect ${config.home.profileDirectory}/bin/unityhub %U
       Icon=unityhub
       MimeType=x-scheme-handler/unityhub;
       Categories=Development;
@@ -70,7 +68,6 @@ in
       };
       Service = {
         Type = "simple";
-        ExecStartPre = [ "${unityProvidePkg}/bin/unity-provide" ];
         ExecStart = [ "${config.home.profileDirectory}/bin/unityhub" ];
         # stopOnExit=false: terminate Unity Hub (container stays resident)
         # stopOnExit=true : stop the whole container

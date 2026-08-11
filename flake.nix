@@ -35,11 +35,10 @@
             test -f "${test.config.xdg.configFile."distrobox/distrobox.ini".source}"
             test -f "${test.config.xdg.dataFile."applications/unityhub.desktop".source}"
             test -n "${
-              builtins.toString test.config.systemd.user.services."unity-via-distrobox".Service.ExecStartPre
+              builtins.toString test.config.systemd.user.services."unity-via-distrobox".Service.ExecStart
             }"
           '';
           ysh-syntax = pkgs.runCommand "unity-ysh-syntax" { } ''
-            ${pkgs.oils-for-unix}/bin/ysh -n ${./files/unity-provide.ysh}
             ${pkgs.oils-for-unix}/bin/ysh -n ${./files/unityhub.ysh}
             touch $out
           '';
