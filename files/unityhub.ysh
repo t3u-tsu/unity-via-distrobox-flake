@@ -13,6 +13,19 @@ if failed {
   var xdgCfg = "$[ENV.HOME]/.config"
 }
 const INI_FILE = "$xdgCfg/distrobox/distrobox.ini"
+# Logs belong under XDG_STATE_HOME; empty counts as unset, so both fall
+# back to $HOME/.local/state.
+try {
+  var xdgState = ENV.XDG_STATE_HOME
+}
+if failed {
+  var xdgState = "$[ENV.HOME]/.local/state"
+}
+if (xdgState === '') {
+  setvar xdgState = "$[ENV.HOME]/.local/state"
+}
+const PROVISION_DIR = "$xdgState/unity-via-distrobox"
+const PROVISION_LOG = "$PROVISION_DIR/provision.log"
 
 proc notify (message) {
   if command -v notify-send >/dev/null 2>&1 {
@@ -26,17 +39,17 @@ proc provision () {
   echo 'Provisioning Unity Distrobox container...'
   echo 'This will download Ubuntu 22.04 and install Unity Hub.'
   # Keep the full distrobox output on failure; remove it on success.
-  var logFile = "/tmp/unity-assemble-$[getpid()].log"
+  mkdir -p $PROVISION_DIR
   try {
-    distrobox assemble create --file $INI_FILE > $logFile 2>&1
+    distrobox assemble create --file $INI_FILE > $PROVISION_LOG 2>&1
   }
   if failed {
-    echo "Container setup failed. Full log: $logFile"
-    tail -n 30 $logFile
-    notify "Unity container setup failed. See $logFile"
+    echo "Container setup failed. Full log: $PROVISION_LOG"
+    tail -n 30 $PROVISION_LOG
+    notify "Unity container setup failed. See $PROVISION_LOG"
     exit 1
   }
-  rm -f $logFile
+  rm -f $PROVISION_LOG
   notify 'Unity container ready.'
 }
 
