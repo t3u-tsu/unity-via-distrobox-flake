@@ -20,6 +20,7 @@ jobs:
       - name: Magic Nix Cache
         uses: cachix/cachix-action@v15
         with:
+          name: unity-via-distrobox
           skipPush: true
 
       - name: Check Nix Flake
