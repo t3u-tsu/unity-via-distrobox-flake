@@ -18,10 +18,11 @@ let
     name: script:
     pkgs.writeShellApplication {
       inherit name;
-      # Only distrobox/podman are called by name; oils is invoked by path.
+      # distrobox/podman/notify-send are called by name; oils is invoked by path.
       runtimeInputs = [
         pkgs.distrobox
         pkgs.podman
+        pkgs.libnotify
       ];
       text = ''
         exec ${pkgs.oils-for-unix}/bin/ysh ${script} "$@"
