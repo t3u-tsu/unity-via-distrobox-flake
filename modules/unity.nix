@@ -57,17 +57,20 @@ in
 
     xdg.configFile."distrobox/distrobox.ini".text = distroboxIni;
 
-    # xdg.desktopEntries is broken in the current home-manager release.
-    # systemd-run escapes browser sandboxes; %U forwards unityhub:// deep links.
+    # xdg.desktopEntries is broken in this home-manager release, so the file is
+    # handwritten. It mirrors the container's official entry; Exec goes through
+    # systemd-run so the unit owns the process and %U reaches the launcher.
     xdg.dataFile."applications/unityhub.desktop".text = ''
       [Desktop Entry]
       Type=Application
       Name=Unity Hub
-      GenericName=Unity Hub Launcher
+      Comment=The Official Unity Hub
+      GenericName=Unity Hub
       Exec=systemd-run --user --no-block --collect ${config.home.profileDirectory}/bin/unityhub %U
       Icon=unityhub
-      MimeType=x-scheme-handler/unityhub;
+      StartupNotify=true
       Categories=Development;
+      MimeType=x-scheme-handler/unityhub;application/x-unityhub;
       Terminal=false
     '';
 
