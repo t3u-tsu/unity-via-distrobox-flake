@@ -18,5 +18,10 @@ jobs:
       - name: Magic Nix Cache
         uses: DeterminateSystems/magic-nix-cache-action@main
 
+      - name: Check Nix Formatting
+        run: |
+          FMT=$(nix build .#formatter.x86_64-linux --print-out-paths)
+          "$FMT/bin/nixfmt" --check $(git ls-files '*.nix')
+
       - name: Check Nix Flake
         run: nix flake check --show-trace --accept-flake-config
