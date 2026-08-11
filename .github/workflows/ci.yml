@@ -18,10 +18,7 @@ jobs:
           nix_path: nixpkgs=channel:nixos-unstable
 
       - name: Magic Nix Cache
-        uses: cachix/cachix-action@v15
-        with:
-          name: unity-via-distrobox
-          skipPush: true
+        uses: DeterminateSystems/magic-nix-cache-action@v9
 
       - name: Check Nix Flake
         run: nix flake check --show-trace --accept-flake-config
