@@ -8,6 +8,8 @@
 with lib;
 let
   cfg = config.my.unity;
+  # Must match the [unity] section in files/distrobox.ini.
+  containerName = "unity";
   launcher = builtins.readFile ../files/launcher.sh;
   distroboxIni = builtins.readFile ../files/distrobox.ini;
 in
@@ -39,7 +41,10 @@ in
           pkgs.distrobox
           pkgs.podman
         ];
-        text = launcher;
+        text = ''
+          CONTAINER_NAME="${containerName}"
+          ${launcher}
+        '';
       })
     ];
   };

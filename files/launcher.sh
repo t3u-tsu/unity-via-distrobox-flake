@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Unity Hub launcher - auto-provisioning with self-healing and error diagnostics.
-# Managed declaratively by Nix. Do not edit manually.
+# Managed declaratively by Nix (CONTAINER_NAME is injected). Do not edit manually.
 
 set -euo pipefail
 
-CONTAINER_NAME="unity"
+: "${CONTAINER_NAME:?CONTAINER_NAME must be set by the Nix module}"
 INI_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/distrobox/distrobox.ini"
 
 notify() {
@@ -27,19 +27,12 @@ if [ -z "$DISTROBOX" ] || [ -z "$PODMAN" ]; then
 fi
 
 # Match NAME column exactly (trim whitespace, skip header)
-container_line=$("$DISTROBOX" list 2>/dev/null | awk -F'|' -v name="$CONTAINER_NAME" 'NR>1 {gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); if ($2 == name) print}' || true)
+container_line() {
+    "$DISTROBOX" list 2>/dev/null | awk -F'|' -v name="$CONTAINER_NAME" 'NR>1 {gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); if ($2 == name) print}' || true
+}
 
-if [ -z "$container_line" ]; then
-    echo "Unity container not found. Starting automatic setup..."
-
-elif echo "$container_line" | grep -qE "Exited \([1-9][0-9]*\)"; then
-    exit_code=$(echo "$container_line" | sed -n 's/.*Exited (\([0-9]*\)).*/\1/p')
-    echo "Unity container exited abnormally (code=$exit_code). Rebuilding..."
-    "$DISTROBOX" rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
-fi
-
-if ! "$DISTROBOX" list 2>/dev/null | awk -F'|' -v name="$CONTAINER_NAME" 'NR>1 {gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); if ($2 == name) {found=1; exit}} END {exit !found}'; then
-    notify "Starting automatic Unity container setup (this may take a few minutes)..."
+provision() {
+    notify "Setting up Unity container (first launch, may take a few minutes)..."
     echo "Provisioning Unity Distrobox container..."
     echo "This will download Ubuntu 22.04 and install Unity Hub."
     echo ""
@@ -62,8 +55,21 @@ if ! "$DISTROBOX" list 2>/dev/null | awk -F'|' -v name="$CONTAINER_NAME" 'NR>1 {
     fi
 
     rm -f "$log_file"
-    notify "Unity container setup complete! Launching Unity Hub."
+    notify "Unity container ready. Launching Unity Hub."
     echo ""
+}
+
+notify "Launching Unity Hub..."
+
+container=$(container_line)
+if [ -z "$container" ]; then
+    echo "Unity container not found. Starting automatic setup..."
+    provision
+elif echo "$container" | grep -qE "Exited \([1-9][0-9]*\)"; then
+    exit_code=$(echo "$container" | sed -n 's/.*Exited (\([0-9]*\)).*/\1/p')
+    echo "Unity container exited abnormally (code=$exit_code). Rebuilding..."
+    "$DISTROBOX" rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+    provision
 fi
 
 # distrobox regenerates xdg-open; keep it pointed at distrobox-host-exec so
