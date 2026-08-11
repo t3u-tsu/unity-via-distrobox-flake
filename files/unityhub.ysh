@@ -16,7 +16,8 @@ const INI_FILE = "$xdgCfg/distrobox/distrobox.ini"
 
 proc notify (message) {
   if command -v notify-send >/dev/null 2>&1 {
-    notify-send -i unityhub 'Unity Hub' $message
+    # D-Bus may be unreachable; drop errors and keep going.
+    notify-send -i unityhub 'Unity Hub' $message 2>/dev/null || true
   }
 }
 
@@ -71,6 +72,14 @@ podman exec -u root $CONTAINER_NAME sh -c '
     ln -sf /usr/bin/distrobox-host-exec /usr/bin/xdg-open
   fi
 ' || true
+
+# Icon=unityhub only exists in the container; mirror it to the host.
+var iconDir = "$[ENV.HOME]/.local/share/icons/hicolor/256x256/apps"
+var iconPath = "$iconDir/unityhub.png"
+if test ! -e $iconPath {
+  mkdir -p $iconDir
+  podman cp $CONTAINER_NAME:/usr/share/pixmaps/unityhub.png $iconPath || true
+}
 
 notify 'Launching Unity Hub...'
 
