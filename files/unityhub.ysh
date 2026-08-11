@@ -24,13 +24,18 @@ proc provision () {
   notify 'Setting up Unity container (first launch, may take a few minutes)...'
   echo 'Provisioning Unity Distrobox container...'
   echo 'This will download Ubuntu 22.04 and install Unity Hub.'
+  # Keep the full distrobox output on failure; remove it on success.
+  var logFile = "/tmp/unity-assemble-$[getpid()].log"
   try {
-    distrobox assemble create --file $INI_FILE
+    distrobox assemble create --file $INI_FILE > $logFile 2>&1
   }
   if failed {
-    notify 'Unity container setup failed. Check: journalctl --user -u unity-via-distrobox'
+    echo "Container setup failed. Full log: $logFile"
+    tail -n 30 $logFile
+    notify "Unity container setup failed. See $logFile"
     exit 1
   }
+  rm -f $logFile
   notify 'Unity container ready.'
 }
 
