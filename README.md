@@ -76,14 +76,14 @@ After `nixos-rebuild switch` (or `home-manager switch`), launching `unityhub` (f
 ### Rebuilding the container
 If you modify `distrobox.ini` (e.g., adding packages or updating hooks):
 1.  Apply the changes (`nixos-rebuild switch` or `home-manager switch`).
-2.  Remove the existing container: `distrobox rm -f unity`
+2.  Remove the existing container: `distrobox rm -f unity-via-distrobox`
 3.  Launch Unity Hub (`unityhub`) — the launcher recreates the container automatically.
 
 ### Verifying symlinks
 Inside the container, ensure `xdg-open` correctly redirects to the host:
 
 ```bash
-distrobox enter unity -- ls -la /usr/bin/xdg-open
+distrobox enter unity-via-distrobox -- ls -la /usr/bin/xdg-open
 # Should return: /usr/bin/xdg-open -> /usr/bin/distrobox-host-exec
 ```
 

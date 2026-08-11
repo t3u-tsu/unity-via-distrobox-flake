@@ -32,7 +32,6 @@ container_line() {
 }
 
 provision() {
-    notify "Setting up Unity container (first launch, may take a few minutes)..."
     echo "Provisioning Unity Distrobox container..."
     echo "This will download Ubuntu 22.04 and install Unity Hub."
     echo ""
@@ -59,17 +58,19 @@ provision() {
     echo ""
 }
 
-notify "Launching Unity Hub..."
-
 container=$(container_line)
 if [ -z "$container" ]; then
+    notify "Setting up Unity container (first launch, may take a few minutes)..."
     echo "Unity container not found. Starting automatic setup..."
     provision
 elif echo "$container" | grep -qE "Exited \([1-9][0-9]*\)"; then
     exit_code=$(echo "$container" | sed -n 's/.*Exited (\([0-9]*\)).*/\1/p')
+    notify "Rebuilding Unity container (previous run exited abnormally)..."
     echo "Unity container exited abnormally (code=$exit_code). Rebuilding..."
     "$DISTROBOX" rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
     provision
+else
+    notify "Launching Unity Hub..."
 fi
 
 # distrobox regenerates xdg-open; keep it pointed at distrobox-host-exec so

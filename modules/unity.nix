@@ -8,8 +8,8 @@
 with lib;
 let
   cfg = config.my.unity;
-  # Must match the [unity] section in files/distrobox.ini.
-  containerName = "unity";
+  # Must match the section name in files/distrobox.ini.
+  containerName = "unity-via-distrobox";
   launcher = builtins.readFile ../files/launcher.sh;
   distroboxIni = builtins.readFile ../files/distrobox.ini;
 in
