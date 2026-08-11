@@ -19,8 +19,7 @@ in
   config = mkIf cfg.enable {
     xdg.configFile."distrobox/distrobox.ini".text = distroboxIni;
 
-    # xdg.desktopEntries evaluates the removed `extraConfig` option for every
-    # entry in the current home-manager release, so ship the file directly.
+    # xdg.desktopEntries is broken in the current home-manager release.
     # systemd-run --user escapes browser sandboxes for unityhub:// deep links.
     xdg.dataFile."applications/unityhub.desktop".text = ''
       [Desktop Entry]

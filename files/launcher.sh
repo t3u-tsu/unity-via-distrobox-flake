@@ -73,8 +73,7 @@ else
     notify "Launching Unity Hub..."
 fi
 
-# distrobox regenerates xdg-open; keep it pointed at distrobox-host-exec so
-# browser sign-in redirects escape back to the host session.
+# Keep xdg-open pointed at distrobox-host-exec for sign-in redirects.
 "$PODMAN" exec -u root "$CONTAINER_NAME" sh -c "
     if [ -f /usr/bin/xdg-open ] && [ ! -L /usr/bin/xdg-open ]; then
         rm -f /usr/bin/xdg-open
@@ -82,8 +81,7 @@ fi
     fi
 " >/dev/null 2>&1 || true
 
-# Host GIO/SSL env vars point into the Nix store; drop them so the container
-# uses its native Ubuntu libraries and certificates.
+# Drop host GIO/SSL env vars; the container uses native Ubuntu libs.
 exec env \
     -u GIO_EXTRA_MODULES \
     -u SSL_CERT_FILE \
