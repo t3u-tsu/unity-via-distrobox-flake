@@ -26,6 +26,7 @@ After `nixos-rebuild switch`, launching `unityhub` provisions the container on f
 | Option | Default | Description |
 | --- | --- | --- |
 | `my.unity.enable` | `false` | Enable Unity development tools via Distrobox. |
+| `my.unity.stopOnExit` | `false` | Stop the Distrobox container when Unity Hub exits. |
 
 ## What it installs
 

@@ -1,0 +1,44 @@
+#!/usr/bin/env ysh
+# Provision the Unity Distrobox container if missing or broken.
+# Runs as ExecStartPre of unity-via-distrobox.service.
+
+const CONTAINER_NAME = 'unity-via-distrobox'
+const INI_FILE = "${XDG_CONFIG_HOME:-$[ENV.HOME]/.config}/distrobox/distrobox.ini"
+
+proc notify (message) {
+  if command -v notify-send {
+    notify-send -i unityhub 'Unity Hub' $message
+  }
+}
+
+proc provision () {
+  notify 'Setting up Unity container (first launch, may take a few minutes)...'
+  echo 'Provisioning Unity Distrobox container...'
+  echo 'This will download Ubuntu 22.04 and install Unity Hub.'
+  try {
+    distrobox assemble create --file $INI_FILE
+  }
+  if failed {
+    notify 'Unity container setup failed. Check: journalctl --user -u unity-via-distrobox'
+    exit 1
+  }
+  notify 'Unity container ready.'
+}
+
+var row = ''
+for line in (@(distrobox list)) {
+  var parts = split(line, '|')
+  if (len(parts) >= 2 and parts[1].trim() === CONTAINER_NAME) {
+    setvar row = line
+  }
+}
+
+if (row === '') {
+  echo 'Unity container not found. Starting automatic setup...'
+  provision
+} elif (row.find('Exited (0)') < 0 and row.find('Exited (') >= 0) {
+  echo 'Unity container exited abnormally. Rebuilding...'
+  notify 'Rebuilding Unity container (previous run exited abnormally)...'
+  distrobox rm -f $CONTAINER_NAME
+  provision
+}

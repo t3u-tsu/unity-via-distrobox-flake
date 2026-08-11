@@ -1,0 +1,31 @@
+#!/usr/bin/env ysh
+# Launch Unity Hub inside the provisioned container.
+# Runs as ExecStart of unity-via-distrobox.service.
+
+const CONTAINER_NAME = 'unity-via-distrobox'
+
+proc notify (message) {
+  if command -v notify-send {
+    notify-send -i unityhub 'Unity Hub' $message
+  }
+}
+
+notify 'Launching Unity Hub...'
+
+# Keep xdg-open pointed at distrobox-host-exec for sign-in redirects.
+podman exec -u root $CONTAINER_NAME sh -c '
+  if [ -f /usr/bin/xdg-open ] && [ ! -L /usr/bin/xdg-open ]; then
+    rm -f /usr/bin/xdg-open
+    ln -sf /usr/bin/distrobox-host-exec /usr/bin/xdg-open
+  fi
+' || true
+
+# Drop host GIO/SSL env vars; the container uses native Ubuntu libs.
+exec env \
+  -u GIO_EXTRA_MODULES \
+  -u SSL_CERT_FILE \
+  -u NIX_SSL_CERT_FILE \
+  -u CURL_CA_BUNDLE \
+  -u SSL_CERT_DIR \
+  -u NIX_SSL_CERT_DIR \
+  distrobox enter -T $CONTAINER_NAME -- unityhub "$@"
