@@ -31,10 +31,7 @@ Import the home-manager module and enable it for your user:
 {
   imports = [ inputs.unity-via-distrobox.homeManagerModules.unity ];
 
-  my.unity = {
-    enable = true;
-    useDistrobox = true; # default
-  };
+  my.unity.enable = true;
 }
 ```
 
@@ -44,10 +41,9 @@ After `nixos-rebuild switch` (or `home-manager switch`), launching `unityhub` (f
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `my.unity.enable` | bool | `false` | Enable the Unity development tools. |
-| `my.unity.useDistrobox` | bool | `true` | Use the Distrobox (Ubuntu 22.04) container for Unity Hub/Editor. When `false`, the native nixpkgs `unityhub` package is installed instead. |
+| `my.unity.enable` | bool | `false` | Enable the Unity development tools (Distrobox-based). |
 
-## 4. What the module installs (Distrobox path)
+## 4. What the module installs
 
 - **`distrobox.ini`** → `~/.config/distrobox/distrobox.ini`. Declarative container spec used by `distrobox assemble create --file`. See [files/distrobox.ini](files/distrobox.ini).
 - **`unityhub` launcher** → `~/.local/bin/unityhub` (via `writeShellApplication`, shellcheck-verified at build time). See [files/launcher.sh](files/launcher.sh).

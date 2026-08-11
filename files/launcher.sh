@@ -1,15 +1,11 @@
 #!/usr/bin/env bash
 # Unity Hub launcher - auto-provisioning with self-healing and error diagnostics.
-# Managed declaratively by Nix (writeShellApplication). Do not edit manually.
+# Managed declaratively by Nix. Do not edit manually.
 
 set -euo pipefail
 
-# ── Configuration ─────────────────────────────────────────────────
-
 CONTAINER_NAME="unity"
 INI_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/distrobox/distrobox.ini"
-
-# ── Helpers ───────────────────────────────────────────────────────
 
 notify() {
     if command -v notify-send >/dev/null 2>&1; then
@@ -23,17 +19,12 @@ fail() {
     exit 1
 }
 
-# ── Path resolution ───────────────────────────────────────────────
-# distrobox/podman are guaranteed on PATH by writeShellApplication's
-# runtimeInputs; the explicit check keeps the script functional when
-# invoked directly outside of Nix.
+# writeShellApplication pins distrobox/podman on PATH; fall back for direct runs.
 DISTROBOX="$(command -v distrobox || true)"
 PODMAN="$(command -v podman || true)"
 if [ -z "$DISTROBOX" ] || [ -z "$PODMAN" ]; then
     fail "distrobox and podman must be installed and available on PATH"
 fi
-
-# ── Phase 1: Container health check ───────────────────────────────
 
 # Match NAME column exactly (trim whitespace, skip header)
 container_line=$("$DISTROBOX" list 2>/dev/null | awk -F'|' -v name="$CONTAINER_NAME" 'NR>1 {gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); if ($2 == name) print}' || true)
@@ -42,13 +33,10 @@ if [ -z "$container_line" ]; then
     echo "Unity container not found. Starting automatic setup..."
 
 elif echo "$container_line" | grep -qE "Exited \([1-9][0-9]*\)"; then
-    # Container exited abnormally → purge and rebuild
     exit_code=$(echo "$container_line" | sed -n 's/.*Exited (\([0-9]*\)).*/\1/p')
     echo "Unity container exited abnormally (code=$exit_code). Rebuilding..."
     "$DISTROBOX" rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
 fi
-
-# ── Phase 2: Provisioning (if needed) ──────────────────────────────
 
 if ! "$DISTROBOX" list 2>/dev/null | awk -F'|' -v name="$CONTAINER_NAME" 'NR>1 {gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); if ($2 == name) {found=1; exit}} END {exit !found}'; then
     notify "Starting automatic Unity container setup (this may take a few minutes)..."
@@ -78,7 +66,8 @@ if ! "$DISTROBOX" list 2>/dev/null | awk -F'|' -v name="$CONTAINER_NAME" 'NR>1 {
     echo ""
 fi
 
-# Ensure container's xdg-open redirects to host (distrobox-host-exec)
+# distrobox regenerates xdg-open; keep it pointed at distrobox-host-exec so
+# browser sign-in redirects escape back to the host session.
 "$PODMAN" exec -u root "$CONTAINER_NAME" sh -c "
     if [ -f /usr/bin/xdg-open ] && [ ! -L /usr/bin/xdg-open ]; then
         rm -f /usr/bin/xdg-open
@@ -86,8 +75,8 @@ fi
     fi
 " >/dev/null 2>&1 || true
 
-# ── Phase 3: Launch Unity Hub ─────────────────────────────────────
-
+# Host GIO/SSL env vars point into the Nix store; drop them so the container
+# uses its native Ubuntu libraries and certificates.
 exec env \
     -u GIO_EXTRA_MODULES \
     -u SSL_CERT_FILE \

@@ -23,9 +23,4 @@ jobs:
           skipPush: true
 
       - name: Check Nix Flake
-        # Evaluates formatter + all checks (module evaluation in both
-        # configurations) and runs shellcheck via writeShellApplication.
         run: nix flake check --show-trace --accept-flake-config
-
-      - name: Build unityhub launcher
-        run: nix build .#unityhub
