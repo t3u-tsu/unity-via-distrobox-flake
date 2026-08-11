@@ -5,7 +5,7 @@
 const CONTAINER_NAME = 'unity-via-distrobox'
 
 proc notify (message) {
-  if command -v notify-send {
+  if command -v notify-send >/dev/null 2>&1 {
     notify-send -i unityhub 'Unity Hub' $message
   }
 }

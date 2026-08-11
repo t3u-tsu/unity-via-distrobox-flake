@@ -3,12 +3,18 @@
 # Runs as ExecStartPre of unity-via-distrobox.service.
 
 const CONTAINER_NAME = 'unity-via-distrobox'
-# $[ENV.HOME] reads the environment directly, unlike ${HOME}, which may be
-# unset when the systemd unit runs with a minimal environment.
-const INI_FILE = "${XDG_CONFIG_HOME:-$[ENV.HOME]/.config}/distrobox/distrobox.ini"
+# Oils does not bind env vars as shell vars, so read ENV directly and fall
+# back to $HOME/.config when XDG_CONFIG_HOME is unset.
+try {
+  var xdgCfg = ENV.XDG_CONFIG_HOME
+}
+if failed {
+  var xdgCfg = "$[ENV.HOME]/.config"
+}
+const INI_FILE = "$xdgCfg/distrobox/distrobox.ini"
 
 proc notify (message) {
-  if command -v notify-send {
+  if command -v notify-send >/dev/null 2>&1 {
     notify-send -i unityhub 'Unity Hub' $message
   }
 }
