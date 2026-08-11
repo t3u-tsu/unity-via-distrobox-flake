@@ -37,7 +37,7 @@ proc notify (message) {
 proc provision () {
   notify 'Setting up Unity container (first launch, may take a few minutes)...'
   echo 'Provisioning Unity Distrobox container...'
-  echo 'This will download Ubuntu 22.04 and install Unity Hub.'
+  echo 'This will download Debian and install Unity Hub.'
   # Keep the full distrobox output on failure; remove it on success.
   mkdir -p $PROVISION_DIR
   try {

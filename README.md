@@ -2,7 +2,7 @@
 
 [![Nix Flake Check](https://github.com/t3u-tsu/unity-via-distrobox-flake/actions/workflows/ci.yml/badge.svg)](https://github.com/t3u-tsu/unity-via-distrobox-flake/actions/workflows/ci.yml)
 
-Runs Unity Hub and the Unity Editor on NixOS inside a [Distrobox](https://github.com/89luca89/distrobox) Ubuntu 22.04 container, where Unity is officially supported (the native nixpkgs package fails in the Editor's build subprocesses).
+Runs Unity Hub and the Unity Editor on NixOS inside a [Distrobox](https://github.com/89luca89/distrobox) Debian 12 container. Unity officially targets Ubuntu; Debian is a drop-in glibc/FHS base that runs Unity's Ubuntu packages, which the native nixpkgs package cannot do (the Editor's build subprocesses fail on NixOS's non-FHS layout).
 
 ## Usage
 
