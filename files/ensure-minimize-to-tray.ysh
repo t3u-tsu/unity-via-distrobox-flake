@@ -1,0 +1,22 @@
+#!/usr/bin/env ysh
+# Merge minimizeToTray (ARGV[0]: "true" or "false") into
+# ~/.config/unityhub/user-settings.json, preserving other keys.
+# Missing/empty/broken settings start from an empty object.
+# Runs from home.activation.
+
+const SETTINGS = "$[ENV.HOME]/.config/unityhub/user-settings.json"
+
+var settings = ({})
+
+if test -f $SETTINGS {
+  # On failure (empty/broken JSON) the setvar is skipped, leaving {}.
+  try {
+    json read < $SETTINGS
+    setvar settings = _reply
+  }
+}
+
+setvar settings.minimizeToTray = (ARGV[0] === "true")
+
+mkdir -p "$[ENV.HOME]/.config/unityhub"
+json write (settings) > $SETTINGS

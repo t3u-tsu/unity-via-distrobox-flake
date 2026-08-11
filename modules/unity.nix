@@ -12,6 +12,7 @@ let
   containerName = "unity-via-distrobox";
   distroboxIni = builtins.readFile ../files/distrobox.ini;
   unityhub = ../files/unityhub.ysh;
+  minimizeToTray = ../files/ensure-minimize-to-tray.ysh;
 
   mkYshWrapper =
     name: script:
@@ -38,9 +39,22 @@ in
       default = false;
       description = "Stop the Distrobox container when Unity Hub exits.";
     };
+
+    minimizeToTray = mkOption {
+      type = types.bool;
+      default = false;
+      description = ''
+        Whether Unity Hub minimizes to the system tray when its window is
+        closed. When false (default), closing the window quits Unity Hub.
+      '';
+    };
   };
 
   config = mkIf cfg.enable {
+    home.activation.ensureMinimizeToTray = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      ${pkgs.oils-for-unix}/bin/ysh ${minimizeToTray} ${boolToString cfg.minimizeToTray}
+    '';
+
     xdg.configFile."distrobox/distrobox.ini".text = distroboxIni;
 
     # xdg.desktopEntries is broken in the current home-manager release.

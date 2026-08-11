@@ -37,9 +37,11 @@
             test -n "${
               builtins.toString test.config.systemd.user.services."unity-via-distrobox".Service.ExecStart
             }"
+            test -n "${test.config.home.activation.ensureMinimizeToTray.data}"
           '';
           ysh-syntax = pkgs.runCommand "unity-ysh-syntax" { } ''
             ${pkgs.oils-for-unix}/bin/ysh -n ${./files/unityhub.ysh}
+            ${pkgs.oils-for-unix}/bin/ysh -n ${./files/ensure-minimize-to-tray.ysh}
             touch $out
           '';
         }

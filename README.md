@@ -38,6 +38,7 @@ After `nixos-rebuild switch`, launching `unityhub` (or the desktop entry) provis
 | `services.unity-via-distrobox.enable` | `false` | (NixOS) Install podman + distrobox and enable rootless podman. |
 | `my.unity.enable` | `false` | (home-manager) Enable the launcher, systemd unit and desktop entry. |
 | `my.unity.stopOnExit` | `false` | Stop the Distrobox container when Unity Hub exits. |
+| `my.unity.minimizeToTray` | `false` | Write `minimizeToTray` to Unity Hub settings: `false` quits Unity Hub when its window is closed; `true` keeps it in the tray. |
 
 ## What it installs
 
