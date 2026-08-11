@@ -3,6 +3,8 @@
 # Runs as ExecStartPre of unity-via-distrobox.service.
 
 const CONTAINER_NAME = 'unity-via-distrobox'
+# $[ENV.HOME] reads the environment directly, unlike ${HOME}, which may be
+# unset when the systemd unit runs with a minimal environment.
 const INI_FILE = "${XDG_CONFIG_HOME:-$[ENV.HOME]/.config}/distrobox/distrobox.ini"
 
 proc notify (message) {
@@ -25,15 +27,21 @@ proc provision () {
   notify 'Unity container ready.'
 }
 
-var row = ''
-for line in (@(distrobox list)) {
-  var parts = split(line, '|')
-  if (len(parts) >= 2 and parts[1].trim() === CONTAINER_NAME) {
-    setvar row = line
+# Return the `distrobox list` row whose NAME field (after '|') is `name`.
+func containerRow (lines, name) {
+  for line in (lines) {
+    var parts = split(line, '|')
+    if (len(parts) >= 2 and parts[1].trim() === name) {
+      return (line)
+    }
   }
+  return (null)
 }
 
-if (row === '') {
+var lines = @(distrobox list)
+var row = containerRow(lines, CONTAINER_NAME)
+
+if (row === null) {
   echo 'Unity container not found. Starting automatic setup...'
   provision
 } elif (row.find('Exited (0)') < 0 and row.find('Exited (') >= 0) {

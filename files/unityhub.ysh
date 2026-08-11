@@ -10,15 +10,19 @@ proc notify (message) {
   }
 }
 
-notify 'Launching Unity Hub...'
+# Unity Hub sign-in opens URLs via xdg-open; re-point it at
+# distrobox-host-exec so redirects reach the host browser.
+proc ensure-host-xdg-open () {
+  podman exec -u root $CONTAINER_NAME sh -c '
+    if [ -f /usr/bin/xdg-open ] && [ ! -L /usr/bin/xdg-open ]; then
+      rm -f /usr/bin/xdg-open
+      ln -sf /usr/bin/distrobox-host-exec /usr/bin/xdg-open
+    fi
+  ' || true
+}
 
-# Keep xdg-open pointed at distrobox-host-exec for sign-in redirects.
-podman exec -u root $CONTAINER_NAME sh -c '
-  if [ -f /usr/bin/xdg-open ] && [ ! -L /usr/bin/xdg-open ]; then
-    rm -f /usr/bin/xdg-open
-    ln -sf /usr/bin/distrobox-host-exec /usr/bin/xdg-open
-  fi
-' || true
+notify 'Launching Unity Hub...'
+ensure-host-xdg-open
 
 # Drop host GIO/SSL env vars; the container uses native Ubuntu libs.
 exec env \
