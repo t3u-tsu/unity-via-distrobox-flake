@@ -19,6 +19,7 @@
     in
     {
       homeManagerModules.unity = import ./modules/unity.nix;
+      nixosModules.unity = import ./modules/nixos.nix;
 
       checks = forAllSystems (
         system:
@@ -33,7 +34,9 @@
             grep -q '^unityhub$' "$out"
             test -f "${test.config.xdg.configFile."distrobox/distrobox.ini".source}"
             test -f "${test.config.xdg.dataFile."applications/unityhub.desktop".source}"
-            test -n "${builtins.toString test.config.systemd.user.services."unity-via-distrobox".Service.ExecStartPre}"
+            test -n "${
+              builtins.toString test.config.systemd.user.services."unity-via-distrobox".Service.ExecStartPre
+            }"
           '';
           ysh-syntax = pkgs.runCommand "unity-ysh-syntax" { } ''
             ${pkgs.oils-for-unix}/bin/ysh -n ${./files/unity-provide.ysh}
