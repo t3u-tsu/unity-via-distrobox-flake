@@ -25,19 +25,48 @@
         system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          test = import ./test/eval.nix { inherit nixpkgs home-manager; };
-          pkgNames = builtins.map (p: p.name) test.config.home.packages;
+          tests = import ./test/eval.nix { inherit nixpkgs home-manager; };
+
+          # Assert generated files and the systemd unit are wired up.
+          # `extra` adds variant-specific assertions; any failure fails the build.
+          mkModuleEval =
+            name: test: extra:
+            pkgs.runCommand "unity-module-eval-${name}" { } ''
+              set -euo pipefail
+              echo "${
+                builtins.concatStringsSep "\n" (builtins.map (p: p.name) test.config.home.packages)
+              }" > "$out"
+              grep -q '^unityhub$' "$out"
+              test -f "${test.config.xdg.configFile."distrobox/distrobox.ini".source}"
+              test -f "${test.config.xdg.dataFile."applications/unityhub.desktop".source}"
+              test -n "${
+                builtins.toString test.config.systemd.user.services."unity-via-distrobox".Service.ExecStart
+              }"
+              test -n "${
+                builtins.toString test.config.systemd.user.services."unity-via-distrobox".Service.ExecStop
+              }"
+              test -n "${test.config.home.activation.ensureMinimizeToTray.data}"
+              ${extra}
+              touch "$out"
+            '';
         in
         {
-          module-eval = pkgs.runCommand "unity-module-eval" { } ''
-            echo "${builtins.concatStringsSep "\n" pkgNames}" > "$out"
-            grep -q '^unityhub$' "$out"
-            test -f "${test.config.xdg.configFile."distrobox/distrobox.ini".source}"
-            test -f "${test.config.xdg.dataFile."applications/unityhub.desktop".source}"
-            test -n "${
-              builtins.toString test.config.systemd.user.services."unity-via-distrobox".Service.ExecStart
-            }"
-            test -n "${test.config.home.activation.ensureMinimizeToTray.data}"
+          module-eval = mkModuleEval "default" tests.default ''
+            echo "${
+              builtins.toString tests.default.config.systemd.user.services."unity-via-distrobox".Service.ExecStop
+            }" \
+              | grep -q 'pkill -TERM unityhub'
+          '';
+          module-eval-stop-on-exit = mkModuleEval "stop-on-exit" tests.stopOnExit ''
+            echo "${
+              builtins.toString
+                tests.stopOnExit.config.systemd.user.services."unity-via-distrobox".Service.ExecStop
+            }" \
+              | grep -q 'podman stop unity-via-distrobox'
+          '';
+          module-eval-minimize-to-tray = mkModuleEval "minimize-to-tray" tests.minimizeToTray ''
+            echo "${tests.minimizeToTray.config.home.activation.ensureMinimizeToTray.data}" \
+              | grep -q 'ensure-minimize-to-tray.ysh true'
           '';
           ysh-syntax = pkgs.runCommand "unity-ysh-syntax" { } ''
             ${pkgs.oils-for-unix}/bin/ysh -n ${./files/unityhub.ysh}
