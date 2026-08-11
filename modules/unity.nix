@@ -72,10 +72,18 @@ in
         Type = "simple";
         ExecStartPre = [ "${unityProvidePkg}/bin/unity-provide" ];
         ExecStart = [ "${config.home.profileDirectory}/bin/unityhub" ];
-        ExecStop = mkIf cfg.stopOnExit [
-          "${pkgs.podman}/bin/podman stop ${containerName}"
+        # stopOnExit=false: terminate Unity Hub (container stays resident)
+        # stopOnExit=true : stop the whole container
+        ExecStop = [
+          (
+            if cfg.stopOnExit then
+              "-${pkgs.podman}/bin/podman stop ${containerName}"
+            else
+              "-${pkgs.podman}/bin/podman exec ${containerName} pkill -TERM unityhub"
+          )
         ];
         TimeoutStartSec = "1800";
+        TimeoutStopSec = "30";
       };
     };
   };
