@@ -49,15 +49,29 @@ After `nixos-rebuild switch`, launching `unityhub` (or the desktop entry) provis
 
 ## Operation
 
-> The desktop entry launches via a transient `systemd-run` unit, so its
-> logs and status live under `run-*.service`, not
-> `unity-via-distrobox.service`.
+### Daily use
 
-- Status: `systemctl --user status unity-via-distrobox`
-- Logs: `journalctl --user -u unity-via-distrobox`
-- Stop the container: `distrobox stop unity-via-distrobox`
-- Rebuild the container: `distrobox rm -f unity-via-distrobox`, then launch `unityhub`
-- Provisioning failure logs are kept at `~/.local/state/unity-via-distrobox/provision.log` (`$XDG_STATE_HOME` if set; removed on success)
+- Start Unity Hub: `unityhub` (or the desktop entry). The first launch
+  provisions the container (several minutes); later launches start in
+  seconds.
+- Quit: close the Unity Hub window. With `my.unity.stopOnExit = true`
+  (default off) the container stops with it; otherwise it stays running.
+
+### Status & logs
+
+- Container: `distrobox list`
+- Launcher service: `systemctl --user status unity-via-distrobox`
+- Logs: `journalctl --user -u unity-via-distrobox` (a desktop-entry
+  launch runs in a transient `run-*.service` unit, so its logs land
+  under `journalctl --user -u 'run-*.service'`)
+
+### Container management
+
+- Stop manually (e.g. to free resources): `distrobox stop unity-via-distrobox`
+- Rebuild from scratch: `distrobox rm -f unity-via-distrobox`, then
+  launch `unityhub`
+- Provisioning failure logs: kept at
+  `~/.local/state/unity-via-distrobox/provision.log` (removed on success)
 
 ## Troubleshooting
 
