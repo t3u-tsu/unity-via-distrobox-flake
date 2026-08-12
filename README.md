@@ -43,9 +43,8 @@ After `nixos-rebuild switch`, launching `unityhub` (or the desktop entry) provis
 ## What it installs
 
 - `~/.config/unity-via-distrobox/distrobox.ini` — container spec for `distrobox assemble create`
-- `unityhub` on `PATH` — launcher (auto-provisioning, self-healing), installed via `home.packages`
-- `~/.local/share/applications/unityhub.desktop` — desktop entry (`systemd-run --user`, forwards `unityhub://` deep links)
-- systemd user unit `unity-via-distrobox.service` — the launcher runs as `ExecStart` and provisions the container on first use
+- `unityhub` on `PATH` — launcher (auto-provisioning, self-healing); every launch runs in a transient systemd unit
+- `~/.local/share/applications/unityhub.desktop` — desktop entry (forwards `unityhub://` deep links)
 
 ## Operation
 
@@ -60,10 +59,8 @@ After `nixos-rebuild switch`, launching `unityhub` (or the desktop entry) provis
 ### Status & logs
 
 - Container: `distrobox list`
-- Launcher service: `systemctl --user status unity-via-distrobox`
-- Logs: `journalctl --user -u unity-via-distrobox` (a desktop-entry
-  launch runs in a transient `run-*.service` unit, so its logs land
-  under `journalctl --user -u 'run-*.service'`)
+- Logs: `journalctl --user -u 'run-*.service'` (every launch runs in a
+  transient systemd unit)
 
 ### Container management
 

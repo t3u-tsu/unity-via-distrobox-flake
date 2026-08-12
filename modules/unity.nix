@@ -24,8 +24,12 @@ let
         pkgs.util-linux
       ];
       text = ''
-        export UNITY_STOP_ON_EXIT=${if cfg.stopOnExit then "true" else "false"}
-        exec ${pkgs.oils-for-unix}/bin/ysh ${script} "$@"
+        # Launch through a transient unit so the CLI and the desktop entry
+        # share one systemd-managed path; logs land in journald.
+        echo 'Starting Unity Hub...'
+        exec ${pkgs.systemd}/bin/systemd-run --user --no-block --collect \
+          --setenv=UNITY_STOP_ON_EXIT=${if cfg.stopOnExit then "true" else "false"} \
+          ${pkgs.oils-for-unix}/bin/ysh ${script} "$@"
       '';
     };
 
@@ -59,15 +63,15 @@ in
     xdg.configFile."unity-via-distrobox/distrobox.ini".text = distroboxIni;
 
     # xdg.desktopEntries is broken in this home-manager release, so the file is
-    # handwritten. It mirrors the container's official entry; Exec goes through
-    # systemd-run so the unit owns the process and %U reaches the launcher.
+    # handwritten. It mirrors the container's official entry; the launcher runs
+    # the launch itself via systemd-run, so %U reaches it as an argument.
     xdg.dataFile."applications/unityhub.desktop".text = ''
       [Desktop Entry]
       Type=Application
       Name=Unity Hub
       Comment=The Official Unity Hub
       GenericName=Unity Hub
-      Exec=systemd-run --user --no-block --collect ${config.home.profileDirectory}/bin/unityhub %U
+      Exec=${config.home.profileDirectory}/bin/unityhub %U
       Icon=unityhub
       StartupNotify=true
       Categories=Development;
@@ -76,22 +80,5 @@ in
     '';
 
     home.packages = [ unityhubPkg ];
-
-    # State, exclusivity, and lifecycle are managed by systemd:
-    #   activating = provisioning (ExecStartPre), active = Unity Hub running,
-    #   failed = provisioning/startup error.
-    systemd.user.services."unity-via-distrobox" = {
-      Unit = {
-        Description = "Unity Hub via Distrobox";
-      };
-      Service = {
-        Type = "simple";
-        ExecStart = [ "${config.home.profileDirectory}/bin/unityhub" ];
-        # No ExecStop: container lifecycle is handled by the launcher
-        # (stopOnExit), and a systemctl stop / job cancel must not kill
-        # the container out from under a concurrent launcher run.
-        TimeoutStartSec = "1800";
-      };
-    };
   };
 }
