@@ -66,6 +66,9 @@ proc provision () {
     }
     rm -f $PROVISION_LOG
     notify 'Unity container ready.'
+    # Children (distrobox) inherit fd 9; unlock explicitly so later runs
+    # do not misdetect provisioning as still in progress.
+    flock -u 9
   } 9> $PROVISION_LOCK
 }
 
