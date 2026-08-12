@@ -27,11 +27,15 @@ let
         # Report already-running to the terminal and via notify-send.
         # A still-starting instance is detected by its transient unit
         # (ysh unityhub.ysh), whose output goes to journald.
-        if podman exec unity-via-distrobox pgrep -x unityhub-bin >/dev/null 2>&1 \
-          || pgrep -f 'unityhub.ysh' >/dev/null 2>&1; then
-          echo 'Unity Hub is already running.'
-          notify-send -i unityhub 'Unity Hub' 'Unity Hub is already running.' 2>/dev/null || true
-          exit 0
+        # Deep links (arguments) are always forwarded to the running
+        # instance, so skip this check when called with a URL.
+        if [ $# -eq 0 ]; then
+          if podman exec unity-via-distrobox pgrep -x unityhub-bin >/dev/null 2>&1 \
+            || pgrep -f 'unityhub.ysh' >/dev/null 2>&1; then
+            echo 'Unity Hub is already running.'
+            notify-send -i unityhub 'Unity Hub' 'Unity Hub is already running.' 2>/dev/null || true
+            exit 0
+          fi
         fi
         # Launch through a transient unit so the CLI and the desktop entry
         # share one systemd-managed path; logs land in journald.
