@@ -12,6 +12,9 @@ try {
 if failed {
   var xdgCfg = "$[ENV.HOME]/.config"
 }
+if (xdgCfg === '') {
+  setvar xdgCfg = "$[ENV.HOME]/.config"
+}
 const INI_FILE = "$xdgCfg/distrobox/distrobox.ini"
 # Logs belong under XDG_STATE_HOME; empty counts as unset, so both fall
 # back to $HOME/.local/state.
@@ -24,6 +27,15 @@ if failed {
 if (xdgState === '') {
   setvar xdgState = "$[ENV.HOME]/.local/state"
 }
+# stopOnExit: stop the container when Unity Hub exits. Set by the
+# wrapper environment (home-manager option); default to false.
+try {
+  var stopOnExitEnv = ENV.UNITY_STOP_ON_EXIT
+}
+if failed {
+  var stopOnExitEnv = ''
+}
+const STOP_ON_EXIT = (stopOnExitEnv === 'true')
 const PROVISION_DIR = "$xdgState/unity-via-distrobox"
 const PROVISION_LOG = "$PROVISION_DIR/provision.log"
 
@@ -107,11 +119,28 @@ if failed {
 }
 
 # Drop host GIO/SSL env vars; the container uses native Ubuntu libs.
-exec env \
-  -u GIO_EXTRA_MODULES \
-  -u SSL_CERT_FILE \
-  -u NIX_SSL_CERT_FILE \
-  -u CURL_CA_BUNDLE \
-  -u SSL_CERT_DIR \
-  -u NIX_SSL_CERT_DIR \
-  distrobox enter -T $CONTAINER_NAME -- unityhub "$@"
+try {
+  env \
+    -u GIO_EXTRA_MODULES \
+    -u SSL_CERT_FILE \
+    -u NIX_SSL_CERT_FILE \
+    -u CURL_CA_BUNDLE \
+    -u SSL_CERT_DIR \
+    -u NIX_SSL_CERT_DIR \
+    distrobox enter -T $CONTAINER_NAME -- unityhub "$@"
+}
+var hubStatus = _status
+
+# With stopOnExit, stop the container once Unity Hub is gone. A deep
+# link returns as soon as the URL is handed to the already-running
+# instance, so only stop when no unityhub-bin process remains.
+if (STOP_ON_EXIT) {
+  try {
+    podman exec $CONTAINER_NAME pgrep -x unityhub-bin >/dev/null 2>&1
+  }
+  if failed {
+    podman stop $CONTAINER_NAME
+  }
+}
+
+exit $hubStatus
