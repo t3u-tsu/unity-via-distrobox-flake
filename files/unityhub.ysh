@@ -94,7 +94,14 @@ if test ! -e $iconPath {
   podman cp $CONTAINER_NAME:/usr/share/pixmaps/unityhub.png $iconPath || true
 }
 
-notify 'Launching Unity Hub...'
+# Only announce a fresh launch: browser deep links re-enter this
+# launcher while Unity Hub is already running and must stay silent.
+try {
+  systemctl --user is-active unity-via-distrobox.service >/dev/null 2>&1
+}
+if failed {
+  notify 'Launching Unity Hub...'
+}
 
 # Drop host GIO/SSL env vars; the container uses native Ubuntu libs.
 exec env \
