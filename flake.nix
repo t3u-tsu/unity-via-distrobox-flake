@@ -46,28 +46,14 @@
               test -n "${
                 builtins.toString test.config.systemd.user.services."unity-via-distrobox".Service.ExecStart
               }"
-              test -n "${
-                builtins.toString test.config.systemd.user.services."unity-via-distrobox".Service.ExecStop
-              }"
               test -n "${test.config.home.activation.ensureMinimizeToTray.data}"
               ${extra}
               touch "$out"
             '';
         in
         {
-          module-eval = mkModuleEval "default" tests.default ''
-            echo "${
-              builtins.toString tests.default.config.systemd.user.services."unity-via-distrobox".Service.ExecStop
-            }" \
-              | grep -q 'pkill -TERM unityhub'
-          '';
-          module-eval-stop-on-exit = mkModuleEval "stop-on-exit" tests.stopOnExit ''
-            echo "${
-              builtins.toString
-                tests.stopOnExit.config.systemd.user.services."unity-via-distrobox".Service.ExecStop
-            }" \
-              | grep -q 'podman stop unity-via-distrobox'
-          '';
+          module-eval = mkModuleEval "default" tests.default "";
+          module-eval-stop-on-exit = mkModuleEval "stop-on-exit" tests.stopOnExit "";
           module-eval-minimize-to-tray = mkModuleEval "minimize-to-tray" tests.minimizeToTray ''
             echo "${tests.minimizeToTray.config.home.activation.ensureMinimizeToTray.data}" \
               | grep -q 'ensure-minimize-to-tray.ysh true'

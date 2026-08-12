@@ -8,8 +8,6 @@
 with lib;
 let
   cfg = config.my.unity;
-  # Must match the section name in files/distrobox.ini.
-  containerName = "unity-via-distrobox";
   distroboxIni = builtins.readFile ../files/distrobox.ini;
   unityhub = ../files/unityhub.ysh;
   minimizeToTray = ../files/ensure-minimize-to-tray.ysh;
@@ -89,18 +87,10 @@ in
       Service = {
         Type = "simple";
         ExecStart = [ "${config.home.profileDirectory}/bin/unityhub" ];
-        # stopOnExit=false: terminate Unity Hub (container stays resident)
-        # stopOnExit=true : stop the whole container
-        ExecStop = [
-          (
-            if cfg.stopOnExit then
-              "-${pkgs.podman}/bin/podman stop ${containerName}"
-            else
-              "-${pkgs.podman}/bin/podman exec ${containerName} pkill -TERM unityhub"
-          )
-        ];
+        # No ExecStop: container lifecycle is handled by the launcher
+        # (stopOnExit), and a systemctl stop / job cancel must not kill
+        # the container out from under a concurrent launcher run.
         TimeoutStartSec = "1800";
-        TimeoutStopSec = "30";
       };
     };
   };
