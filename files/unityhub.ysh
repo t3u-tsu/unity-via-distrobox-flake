@@ -34,6 +34,7 @@ const STOP_ON_EXIT = (stopOnExitEnv === 'true')
 const PROVISION_DIR = "$xdgState/unity-via-distrobox"
 const PROVISION_LOG = "$PROVISION_DIR/provision.log"
 const PROVISION_LOCK = "$PROVISION_DIR/provision.lock"
+const STOPPED_MARKER = "$PROVISION_DIR/stopped"
 
 proc notify (message) {
   if command -v notify-send >/dev/null 2>&1 {
@@ -42,7 +43,7 @@ proc notify (message) {
   }
 }
 
-proc provision () {
+proc provision (rebuild = '') {
   notify 'Setting up Unity container (first launch, may take a few minutes)...'
   echo 'Provisioning Unity Distrobox container...'
   echo 'This will download Ubuntu 22.04 and install Unity Hub.'
@@ -51,6 +52,11 @@ proc provision () {
   # systemctl start) must not race distrobox assemble create.
   {
     flock 9
+    # Remove inside the lock so concurrent abnormal-exit runs cannot
+    # race distrobox rm with create.
+    if (rebuild === 'true') {
+      distrobox rm -f $CONTAINER_NAME
+    }
     # Keep the full distrobox output on failure; remove it on success.
     try {
       distrobox assemble create --file $INI_FILE > $PROVISION_LOG 2>&1
@@ -89,10 +95,14 @@ if (row === null) {
   echo 'Unity container not found. Starting automatic setup...'
   provision
 } elif (row.find('Exited (0)') < 0 and row.find('Exited (') >= 0) {
-  echo 'Unity container exited abnormally. Rebuilding...'
-  notify 'Rebuilding Unity container (previous run exited abnormally)...'
-  distrobox rm -f $CONTAINER_NAME
-  provision
+  if test -e $STOPPED_MARKER {
+    # Previous run stopped cleanly via stopOnExit; just restart.
+    rm -f $STOPPED_MARKER
+  } else {
+    echo 'Unity container exited abnormally. Rebuilding...'
+    notify 'Rebuilding Unity container (previous run exited abnormally)...'
+    provision 'true'
+  }
 }
 
 # Unity Hub sign-in opens URLs via xdg-open; re-point it at
@@ -172,6 +182,8 @@ if (STOP_ON_EXIT and hubStatus === 0 and not hubUp) {
     podman exec $CONTAINER_NAME pgrep -x unityhub-bin >/dev/null 2>&1
   }
   if failed {
+    # Mark the stop as intentional so the next launch does not rebuild.
+    touch $STOPPED_MARKER
     podman stop $CONTAINER_NAME
   }
 }
