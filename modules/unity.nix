@@ -23,6 +23,7 @@ let
         pkgs.distrobox
         pkgs.podman
         pkgs.libnotify
+        pkgs.util-linux
       ];
       text = ''
         export UNITY_STOP_ON_EXIT=${if cfg.stopOnExit then "true" else "false"}

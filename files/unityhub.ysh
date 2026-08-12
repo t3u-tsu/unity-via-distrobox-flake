@@ -118,12 +118,34 @@ if test ! -e $iconPath {
   podman cp $CONTAINER_NAME:/usr/share/pixmaps/unityhub.png $iconPath || true
 }
 
-# Deep links re-enter while Unity Hub runs; the unit state is unreliable
-# (systemd-run transient unit), so check the process.
+# A concurrent launcher run may find Unity Hub already up, or still being
+# provisioned (flock held); treat both as running.
+var hubUp = false
+var provisioning = false
 try {
   podman exec $CONTAINER_NAME pgrep -x unityhub-bin >/dev/null 2>&1
+  setvar hubUp = true
 }
-if failed {
+if (not hubUp) {
+  try {
+    flock -n $PROVISION_LOCK -c 'true' >/dev/null 2>&1
+  }
+  if failed {
+    setvar hubUp = true
+    setvar provisioning = true
+  }
+}
+
+if (hubUp) {
+  if (provisioning) {
+    echo 'Unity Hub is already being set up.'
+    exit 0
+  }
+  if (len(ARGV) === 0) {
+    echo 'Unity Hub is already running.'
+    exit 0
+  }
+} else {
   notify 'Launching Unity Hub...'
 }
 
@@ -140,10 +162,9 @@ try {
 }
 var hubStatus = _status
 
-# stopOnExit: stop the container only if this run actually launched Unity
-# Hub (deep links return early; a failed launch may mean provisioning is
-# still running elsewhere).
-if (STOP_ON_EXIT and hubStatus === 0) {
+# stopOnExit: stop the container only when this run actually launched Unity
+# Hub (deep links and already-running runs return without starting it).
+if (STOP_ON_EXIT and hubStatus === 0 and not hubUp) {
   try {
     podman exec $CONTAINER_NAME pgrep -x unityhub-bin >/dev/null 2>&1
   }
