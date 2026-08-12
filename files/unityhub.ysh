@@ -33,6 +33,7 @@ if failed {
 const STOP_ON_EXIT = (stopOnExitEnv === 'true')
 const PROVISION_DIR = "$xdgState/unity-via-distrobox"
 const PROVISION_LOG = "$PROVISION_DIR/provision.log"
+const PROVISION_LOCK = "$PROVISION_DIR/provision.lock"
 
 proc notify (message) {
   if command -v notify-send >/dev/null 2>&1 {
@@ -45,22 +46,27 @@ proc provision () {
   notify 'Setting up Unity container (first launch, may take a few minutes)...'
   echo 'Provisioning Unity Distrobox container...'
   echo 'This will download Ubuntu 22.04 and install Unity Hub.'
-  # Keep the full distrobox output on failure; remove it on success.
   mkdir -p $PROVISION_DIR
-  try {
-    distrobox assemble create --file $INI_FILE > $PROVISION_LOG 2>&1
-    # assemble create only creates the container; initialization runs on the
-    # first enter.
-    distrobox enter $CONTAINER_NAME -- true >> $PROVISION_LOG 2>&1
-  }
-  if failed {
-    echo "Container setup failed. Full log: $PROVISION_LOG"
-    tail -n 30 $PROVISION_LOG
-    notify "Unity container setup failed. See $PROVISION_LOG"
-    exit 1
-  }
-  rm -f $PROVISION_LOG
-  notify 'Unity container ready.'
+  # Serialize provisioning: a concurrent launcher run (desktop entry vs.
+  # systemctl start) must not race distrobox assemble create.
+  {
+    flock 9
+    # Keep the full distrobox output on failure; remove it on success.
+    try {
+      distrobox assemble create --file $INI_FILE > $PROVISION_LOG 2>&1
+      # assemble create only creates the container; initialization runs on the
+      # first enter.
+      distrobox enter $CONTAINER_NAME -- true >> $PROVISION_LOG 2>&1
+    }
+    if failed {
+      echo "Container setup failed. Full log: $PROVISION_LOG"
+      tail -n 30 $PROVISION_LOG
+      notify "Unity container setup failed. See $PROVISION_LOG"
+      exit 1
+    }
+    rm -f $PROVISION_LOG
+    notify 'Unity container ready.'
+  } 9> $PROVISION_LOCK
 }
 
 func containerRow (lines, name) {
@@ -134,8 +140,10 @@ try {
 }
 var hubStatus = _status
 
-# stopOnExit: stop the container unless this run only forwarded a deep link.
-if (STOP_ON_EXIT) {
+# stopOnExit: stop the container only if this run actually launched Unity
+# Hub (deep links return early; a failed launch may mean provisioning is
+# still running elsewhere).
+if (STOP_ON_EXIT and hubStatus === 0) {
   try {
     podman exec $CONTAINER_NAME pgrep -x unityhub-bin >/dev/null 2>&1
   }
