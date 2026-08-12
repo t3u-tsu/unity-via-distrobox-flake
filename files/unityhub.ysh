@@ -159,7 +159,7 @@ if (hubUp) {
     exit 0
   }
 } else {
-  # Launching notification disabled (was: notify 'Launching Unity Hub...').
+  # notify 'Launching Unity Hub...'
   true
 }
 
