@@ -18,7 +18,7 @@
       ];
     in
     {
-      homeManagerModules.unity = import ./modules/unity.nix;
+      homeModules.unity = import ./modules/unity.nix;
       nixosModules.unity = import ./modules/nixos.nix;
 
       checks = forAllSystems (

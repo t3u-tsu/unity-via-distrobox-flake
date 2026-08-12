@@ -22,7 +22,7 @@ inputs.unity-via-distrobox.url = "github:t3u-tsu/unity-via-distrobox-flake";
 ```nix
 # home-manager module: launcher, systemd unit, desktop entry
 { inputs, ... }: {
-  imports = [ inputs.unity-via-distrobox.homeManagerModules.unity ];
+  imports = [ inputs.unity-via-distrobox.homeModules.unity ];
   my.unity.enable = true;
 }
 ```
