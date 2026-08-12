@@ -37,7 +37,7 @@
                 builtins.concatStringsSep "\n" (builtins.map (p: p.name) test.config.home.packages)
               }" > "$out"
               grep -q '^unityhub$' "$out"
-              test -f "${test.config.xdg.configFile."distrobox/distrobox.ini".source}"
+              test -f "${test.config.xdg.configFile."unity-via-distrobox/distrobox.ini".source}"
               desktop="${test.config.xdg.dataFile."applications/unityhub.desktop".source}"
               test -f "$desktop"
               grep -q '^Exec=.*systemd-run' "$desktop"

@@ -13,7 +13,7 @@ if failed {
 if (xdgCfg === '') {
   setvar xdgCfg = "$[ENV.HOME]/.config"
 }
-const INI_FILE = "$xdgCfg/distrobox/distrobox.ini"
+const INI_FILE = "$xdgCfg/unity-via-distrobox/distrobox.ini"
 try {
   var xdgState = ENV.XDG_STATE_HOME
 }
@@ -96,7 +96,16 @@ podman exec -u root $CONTAINER_NAME sh -c '
 ' || true
 
 # Icon=unityhub only exists in the container; mirror it to the host.
-var iconDir = "$[ENV.HOME]/.local/share/icons/hicolor/256x256/apps"
+try {
+  var xdgData = ENV.XDG_DATA_HOME
+}
+if failed {
+  var xdgData = "$[ENV.HOME]/.local/share"
+}
+if (xdgData === '') {
+  setvar xdgData = "$[ENV.HOME]/.local/share"
+}
+var iconDir = "$xdgData/icons/hicolor/256x256/apps"
 var iconPath = "$iconDir/unityhub.png"
 if test ! -e $iconPath {
   mkdir -p $iconDir

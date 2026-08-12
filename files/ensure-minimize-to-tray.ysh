@@ -1,8 +1,18 @@
 #!/usr/bin/env ysh
-# Merge minimizeToTray (ARGV[0]) into ~/.config/unityhub/user-settings.json.
+# Merge minimizeToTray (ARGV[0]) into Unity Hub's user-settings.json.
 # Runs from home.activation.
 
-const SETTINGS = "$[ENV.HOME]/.config/unityhub/user-settings.json"
+# ysh does not bind env vars; fall back when unset or empty.
+try {
+  var xdgCfg = ENV.XDG_CONFIG_HOME
+}
+if failed {
+  var xdgCfg = "$[ENV.HOME]/.config"
+}
+if (xdgCfg === '') {
+  setvar xdgCfg = "$[ENV.HOME]/.config"
+}
+const SETTINGS = "$xdgCfg/unityhub/user-settings.json"
 
 var settings = ({})
 
@@ -16,5 +26,5 @@ if test -f $SETTINGS {
 
 setvar settings.minimizeToTray = (ARGV[0] === "true")
 
-mkdir -p "$[ENV.HOME]/.config/unityhub"
+mkdir -p "$xdgCfg/unityhub"
 json write (settings) > $SETTINGS

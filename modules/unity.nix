@@ -57,7 +57,7 @@ in
       ${pkgs.oils-for-unix}/bin/ysh ${minimizeToTray} ${boolToString cfg.minimizeToTray}
     '';
 
-    xdg.configFile."distrobox/distrobox.ini".text = distroboxIni;
+    xdg.configFile."unity-via-distrobox/distrobox.ini".text = distroboxIni;
 
     # xdg.desktopEntries is broken in this home-manager release, so the file is
     # handwritten. It mirrors the container's official entry; Exec goes through
