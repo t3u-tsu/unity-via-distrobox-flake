@@ -1,11 +1,9 @@
 #!/usr/bin/env ysh
-# Launch Unity Hub inside a Distrobox container, provisioning it on first
-# use. Runs as ExecStart of unity-via-distrobox.service or directly from the
-# desktop entry (systemd-run) with a unityhub:// deep-link URL as $1.
+# Launch Unity Hub in a Distrobox container, provisioning it on first use;
+# forwards unityhub:// deep links to an already-running instance.
 
 const CONTAINER_NAME = 'unity-via-distrobox'
-# Oils does not bind env vars as shell vars, so read ENV directly and fall
-# back to $HOME/.config when XDG_CONFIG_HOME is unset.
+# ysh does not bind env vars; fall back when unset or empty.
 try {
   var xdgCfg = ENV.XDG_CONFIG_HOME
 }
@@ -16,8 +14,6 @@ if (xdgCfg === '') {
   setvar xdgCfg = "$[ENV.HOME]/.config"
 }
 const INI_FILE = "$xdgCfg/distrobox/distrobox.ini"
-# Logs belong under XDG_STATE_HOME; empty counts as unset, so both fall
-# back to $HOME/.local/state.
 try {
   var xdgState = ENV.XDG_STATE_HOME
 }
@@ -27,8 +23,7 @@ if failed {
 if (xdgState === '') {
   setvar xdgState = "$[ENV.HOME]/.local/state"
 }
-# stopOnExit: stop the container when Unity Hub exits. Set by the
-# wrapper environment (home-manager option); default to false.
+# Set by the wrapper from the stopOnExit option.
 try {
   var stopOnExitEnv = ENV.UNITY_STOP_ON_EXIT
 }
@@ -54,6 +49,9 @@ proc provision () {
   mkdir -p $PROVISION_DIR
   try {
     distrobox assemble create --file $INI_FILE > $PROVISION_LOG 2>&1
+    # assemble create only creates the container; initialization runs on the
+    # first enter.
+    distrobox enter $CONTAINER_NAME -- true >> $PROVISION_LOG 2>&1
   }
   if failed {
     echo "Container setup failed. Full log: $PROVISION_LOG"
@@ -65,7 +63,6 @@ proc provision () {
   notify 'Unity container ready.'
 }
 
-# Return the `distrobox list` row whose NAME field (after '|') is `name`.
 func containerRow (lines, name) {
   for line in (lines) {
     var parts = split(line, '|')
@@ -106,11 +103,8 @@ if test ! -e $iconPath {
   podman cp $CONTAINER_NAME:/usr/share/pixmaps/unityhub.png $iconPath || true
 }
 
-# Only announce a fresh launch: browser deep links re-enter this
-# launcher while Unity Hub is already running and must stay silent.
-# Check the container process directly: the desktop entry runs us via a
-# transient systemd-run unit, so the named unit is not necessarily
-# active while Unity Hub is up.
+# Deep links re-enter while Unity Hub runs; the unit state is unreliable
+# (systemd-run transient unit), so check the process.
 try {
   podman exec $CONTAINER_NAME pgrep -x unityhub-bin >/dev/null 2>&1
 }
@@ -131,9 +125,7 @@ try {
 }
 var hubStatus = _status
 
-# With stopOnExit, stop the container once Unity Hub is gone. A deep
-# link returns as soon as the URL is handed to the already-running
-# instance, so only stop when no unityhub-bin process remains.
+# stopOnExit: stop the container unless this run only forwarded a deep link.
 if (STOP_ON_EXIT) {
   try {
     podman exec $CONTAINER_NAME pgrep -x unityhub-bin >/dev/null 2>&1

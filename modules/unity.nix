@@ -25,7 +25,6 @@ let
         pkgs.libnotify
       ];
       text = ''
-        # Tell the launcher whether to stop the container when Unity Hub exits.
         export UNITY_STOP_ON_EXIT=${if cfg.stopOnExit then "true" else "false"}
         exec ${pkgs.oils-for-unix}/bin/ysh ${script} "$@"
       '';

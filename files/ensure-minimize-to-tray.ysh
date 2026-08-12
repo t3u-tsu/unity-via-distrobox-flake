@@ -1,7 +1,5 @@
 #!/usr/bin/env ysh
-# Merge minimizeToTray (ARGV[0]: "true" or "false") into
-# ~/.config/unityhub/user-settings.json, preserving other keys.
-# Missing/empty/broken settings start from an empty object.
+# Merge minimizeToTray (ARGV[0]) into ~/.config/unityhub/user-settings.json.
 # Runs from home.activation.
 
 const SETTINGS = "$[ENV.HOME]/.config/unityhub/user-settings.json"
