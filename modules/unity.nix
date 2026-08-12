@@ -24,10 +24,13 @@ let
         pkgs.util-linux
       ];
       text = ''
-        # The transient unit's output goes to journald, so report an
-        # already-running instance from the wrapper for terminal feedback.
-        if podman exec unity-via-distrobox pgrep -x unityhub-bin >/dev/null 2>&1; then
+        # Report already-running to the terminal and via notify-send.
+        # A still-starting instance is detected by its transient unit
+        # (ysh unityhub.ysh), whose output goes to journald.
+        if podman exec unity-via-distrobox pgrep -x unityhub-bin >/dev/null 2>&1 \
+          || pgrep -f 'unityhub.ysh' >/dev/null 2>&1; then
           echo 'Unity Hub is already running.'
+          notify-send -i unityhub 'Unity Hub' 'Unity Hub is already running.' 2>/dev/null || true
           exit 0
         fi
         # Launch through a transient unit so the CLI and the desktop entry
