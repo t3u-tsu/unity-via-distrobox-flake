@@ -24,11 +24,18 @@ let
         pkgs.util-linux
       ];
       text = ''
+        # The transient unit's output goes to journald, so report an
+        # already-running instance from the wrapper for terminal feedback.
+        if podman exec unity-via-distrobox pgrep -x unityhub-bin >/dev/null 2>&1; then
+          echo 'Unity Hub is already running.'
+          exit 0
+        fi
         # Launch through a transient unit so the CLI and the desktop entry
         # share one systemd-managed path; logs land in journald.
         echo 'Starting Unity Hub...'
         exec ${pkgs.systemd}/bin/systemd-run --user --no-block --collect \
           --setenv=UNITY_STOP_ON_EXIT=${if cfg.stopOnExit then "true" else "false"} \
+          --setenv=PATH="$PATH" \
           ${pkgs.oils-for-unix}/bin/ysh ${script} "$@"
       '';
     };
