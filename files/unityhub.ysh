@@ -159,7 +159,8 @@ if (hubUp) {
     exit 0
   }
 } else {
-  notify 'Launching Unity Hub...'
+  # Launching notification disabled (was: notify 'Launching Unity Hub...').
+  true
 }
 
 # Drop host GIO/SSL env vars; the container uses native Ubuntu libs.
